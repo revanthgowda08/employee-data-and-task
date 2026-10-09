@@ -14,10 +14,11 @@ class HttpError extends Error {
 }
 const bad = (msg) => new HttpError(400, msg);
 
-function createApp(db) {
+function createApp(db, { basePath = '' } = {}) {
   const app = express();
   app.set('trust proxy', 1); // behind the host's HTTPS proxy
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const cookiePath = basePath || '/';
+  const secureFor = (req) => (req.secure || process.env.NODE_ENV === 'production' ? '; Secure' : '');
   app.get('/healthz', (req, res) => res.send('ok'));
   app.use(express.json({ limit: '100kb' }));
 
@@ -52,11 +53,11 @@ function createApp(db) {
       throw new HttpError(401, 'Invalid email or password');
     }
     fails.delete(req.ip);
-    res.setHeader('Set-Cookie', `session=${issueToken(u.id)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${TTL_MS / 1000}${secure}`);
+    res.setHeader('Set-Cookie', `session=${issueToken(u.id)}; HttpOnly; SameSite=Strict; Path=${cookiePath}; Max-Age=${TTL_MS / 1000}${secureFor(req)}`);
     res.json(publicUser(u));
   }));
   app.post('/api/logout', (req, res) => {
-    res.setHeader('Set-Cookie', `session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure}`);
+    res.setHeader('Set-Cookie', `session=; HttpOnly; SameSite=Strict; Path=${cookiePath}; Max-Age=0${secureFor(req)}`);
     res.json({ ok: true });
   });
   app.get('/api/me', h((req, res) => res.json(publicUser(needUser(req)))));

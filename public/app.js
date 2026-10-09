@@ -10,7 +10,7 @@ const isAdmin = () => me?.role === 'admin';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 async function api(method, url, body) {
-  const res = await fetch('/api' + url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch('api' + url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && url !== '/login') { me = null; render(); throw new Error('Please log in'); }
   if (!res.ok) throw new Error(data.error || 'Request failed');
