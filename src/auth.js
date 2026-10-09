@@ -1,5 +1,8 @@
 const crypto = require('node:crypto');
 
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET must be set in production');
+}
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const TTL_MS = 12 * 60 * 60 * 1000;
 

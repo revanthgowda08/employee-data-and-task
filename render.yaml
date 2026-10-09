@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: team-dashboard
+    runtime: docker
+    plan: starter          # persistent disks need a paid plan
+    healthCheckPath: /healthz
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

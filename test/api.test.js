@@ -90,3 +90,8 @@ test('tampered session cookie is rejected', async () => {
   const admin = await login('admin@example.com', 'admin12345');
   assert.equal((await call('GET', '/api/me', null, admin.slice(0, -2) + 'xx')).status, 401);
 });
+
+test('login is rate limited after repeated failures', async () => {
+  for (let i = 0; i < 10; i++) await call('POST', '/api/login', { email: 'nobody@example.com', password: 'wrongwrong' });
+  assert.equal((await call('POST', '/api/login', { email: 'nobody@example.com', password: 'wrongwrong' })).status, 429);
+});

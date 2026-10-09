@@ -16,6 +16,9 @@ const bad = (msg) => new HttpError(400, msg);
 
 function createApp(db) {
   const app = express();
+  app.set('trust proxy', 1); // behind the host's HTTPS proxy
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  app.get('/healthz', (req, res) => res.send('ok'));
   app.use(express.json({ limit: '100kb' }));
 
   const one = (sql, ...p) => db.prepare(sql).get(...p);
@@ -36,16 +39,24 @@ function createApp(db) {
   const h = (fn) => (req, res, next) => { try { fn(req, res); } catch (e) { next(e); } };
 
   // ---- auth routes -----------------------------------------------------
+  const fails = new Map(); // ip -> { n, reset }; max 10 failures / 15 min
   app.post('/api/login', h((req, res) => {
     const { email, password } = req.body || {};
+    const f = fails.get(req.ip);
+    if (f && f.reset > Date.now() && f.n >= 10) throw new HttpError(429, 'Too many failed attempts. Try again later.');
     const u = typeof email === 'string' && typeof password === 'string'
       ? one('SELECT * FROM employees WHERE email = ? AND active = 1', email.trim().toLowerCase()) : null;
-    if (!u || !verifyPassword(password, u.password_hash)) throw new HttpError(401, 'Invalid email or password');
-    res.setHeader('Set-Cookie', `session=${issueToken(u.id)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${TTL_MS / 1000}`);
+    if (!u || !verifyPassword(password, u.password_hash)) {
+      const cur = f && f.reset > Date.now() ? f : { n: 0, reset: Date.now() + 15 * 60 * 1000 };
+      cur.n++; fails.set(req.ip, cur);
+      throw new HttpError(401, 'Invalid email or password');
+    }
+    fails.delete(req.ip);
+    res.setHeader('Set-Cookie', `session=${issueToken(u.id)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${TTL_MS / 1000}${secure}`);
     res.json(publicUser(u));
   }));
   app.post('/api/logout', (req, res) => {
-    res.setHeader('Set-Cookie', 'session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+    res.setHeader('Set-Cookie', `session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure}`);
     res.json({ ok: true });
   });
   app.get('/api/me', h((req, res) => res.json(publicUser(needUser(req)))));

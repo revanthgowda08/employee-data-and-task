@@ -3,6 +3,9 @@ const { hashPassword } = require('./auth');
 // Creates the first admin so you can log in. Set ADMIN_EMAIL / ADMIN_PASSWORD to override the defaults.
 function seedAdminIfEmpty(db) {
   if (db.prepare('SELECT COUNT(*) n FROM employees').get().n > 0) return false;
+  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD) {
+    throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD before the first production start');
+  }
   const email = (process.env.ADMIN_EMAIL || 'admin@example.com').toLowerCase();
   const password = process.env.ADMIN_PASSWORD || 'admin12345';
   db.prepare("INSERT INTO employees (name, email, password_hash, role, department, position) VALUES ('Admin', ?, ?, 'admin', 'Management', 'Administrator')")

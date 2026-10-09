@@ -40,3 +40,9 @@ Task changes are logged (task → History). Deactivated employees can't log in.
 
 Basic MVP: no password-reset email, login rate-limiting or HTTPS (put it behind a TLS proxy and add
 the `Secure` cookie flag). Good next additions: leave requests, CSV export, task comments, notifications.
+
+## Deploy
+
+A `Dockerfile` and `render.yaml` are included. The app stores data in SQLite, so the host **must provide a persistent
+disk/volume** mounted at `/data`. In production set `SESSION_SECRET`, `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+(the app refuses to start without them). Cookies are `Secure` when `NODE_ENV=production`; failed logins are rate-limited per IP.
