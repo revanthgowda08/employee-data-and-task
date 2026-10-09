@@ -1,0 +1,14 @@
+{
+  "name": "employee-data-and-task",
+  "version": "1.0.0",
+  "description": "Employee management, task assignment and attendance tracking dashboard",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "seed": "node --disable-warning=ExperimentalWarning src/seed.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "engines": { "node": ">=22.13" },
+  "license": "MIT",
+  "dependencies": { "express": "^5.1.0" }
+}
